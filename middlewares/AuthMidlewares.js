@@ -8,9 +8,9 @@ export const protect = async (req, res, next) => {
             token = req.headers.authorization.split(" ")[1]
             const decoded = jwt.verify(token, process.env.JWT_SECRET)
             req.user = await User.findById(decoded.id).select('-password')
-            console.log(decoded)
             next()
         } catch (err) {
+            console.log("err text", err)
             res.status(401).json({ message: 'not authorized, Token Failed!' })
         }
     } else {
@@ -18,7 +18,7 @@ export const protect = async (req, res, next) => {
     }
 }
 
-export const isAdmin =  (req, res, next) => {
+export const isAdmin = (req, res, next) => {
 
     try {
         if (req.user && req.user.isAdmin) {
