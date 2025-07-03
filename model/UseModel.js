@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     username: {
         type: String,
         require: true,
@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema({
 })
 
 // hashed password befor save User
-UserSchema.pre('save', async(next)=>{
+userSchema.pre('save', async(next)=>{
     if(!this.isModified('password')){
         return next()
     }
@@ -34,8 +34,8 @@ UserSchema.pre('save', async(next)=>{
 })
 
 // ? compare password are matches or not
-UserSchema.methods.matchPassword = async function (enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password)   
 }
 
-export const User = mongoose.model('Users', UserSchema ) 
+export const User = mongoose.model('Users', userSchema ) 
