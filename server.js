@@ -6,7 +6,8 @@ import { connectDb } from './Database/db.js';
 import { SocketIO } from './socket.js';
 import { Server } from 'socket.io';
 import { userRouter } from './router/UserRoutes.js';
-import { GroupRouter } from './router/GroupRouter.js';
+import { GroupRouter } from './router/GroupRoutes.js';
+import { ChatRouter } from './router/ChatRoutes.js';
 
 // configuration
 configDotenv();
@@ -32,6 +33,7 @@ SocketIO(io);
 //? Routers
 app.use('/api/user', userRouter)
 app.use('/api/groups', GroupRouter)
+app.use('/api/chats', ChatRouter)
 
 // Start Server
 server.listen(PORT, () => {
