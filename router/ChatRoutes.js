@@ -8,7 +8,7 @@ ChatRouter.post('/', protect, async (req, res) => {
 
     try {
         const { content, group_id } = req.body
-        if (content || group_id) {
+        if (!content || !group_id) {
             return res.status(400).json({ message: 'empty content and group_id' })
         }
         const message = await Message.create({
@@ -16,7 +16,7 @@ ChatRouter.post('/', protect, async (req, res) => {
             content,
             group: group_id
         })
-        const populatedMessage = await Message.findById(message._id).populate('group', 'username email')
+        const populatedMessage = await Message.findById(message._id).populate('sender', 'username email')
         res.json(populatedMessage)
 
     } catch (error) {
