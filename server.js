@@ -6,6 +6,7 @@ import { connectDb } from './Database/db.js';
 import { SocketIO } from './socket.js';
 import { Server } from 'socket.io';
 import { userRouter } from './router/UserRoutes.js';
+import { GroupRouter } from './router/GroupRouter.js';
 
 // configuration
 configDotenv();
@@ -28,9 +29,9 @@ app.use(express.json());
 connectDb();
 // Socket
 SocketIO(io);
-//? User Routers
-// for users
+//? Routers
 app.use('/api/user', userRouter)
+app.use('/api/groups', GroupRouter)
 
 // Start Server
 server.listen(PORT, () => {

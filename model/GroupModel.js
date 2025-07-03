@@ -12,11 +12,11 @@ const groupSchema = new mongoose.Schema({
         trim: true
     },
 
-    member: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     admin: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true })
 
 export const Group = mongoose.model('Group', groupSchema) 
