@@ -129,7 +129,7 @@ socket.emit('send message', {
 
 ## 🧑‍💻 Developed By
 
-Azizar Rahman — [GitHub](https://github.com/your-username)
+Azizar Rahman — [GitHub](https://github.com/marmiju)
 
 ---
 
