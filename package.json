@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A complete backend system for real-time chat applications using **Express.js** and **Socket.IO**, with structured route handling for users, groups, and chat messages.",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.0.1",
@@ -19,5 +19,14 @@
     "mongoose": "^8.16.1",
     "nodemon": "^3.1.10",
     "socket.io": "^4.8.1"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marmiju/chat_backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marmiju/chat_backend/issues"
+  },
+  "homepage": "https://github.com/marmiju/chat_backend#readme"
 }

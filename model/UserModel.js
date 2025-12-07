@@ -32,11 +32,11 @@ userSchema.pre('save', async function (next) {
     return next();
   }
   this.password = await bcrypt.hash(this.password, 10);
-  next(); // ✅ add this also
+  next(); //  add this also
 });
 
 
-// ? compare password are matches or not
+//  compare password are matches or not
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="flex h-screen bg-gray-100">
+
+  <!-- Sidebar -->
+  <div id="group-sidebar" class="w-1/4 bg-gray-800 text-white p-4">
+    <h2 class="text-xl font-bold mb-4">Groups</h2>
+    <ul id="group-list" class="space-y-2">
+      <!-- Groups will be dynamically inserted here -->
+    </ul>
+    <button id="logout">log out</button>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="flex-1 flex flex-col">
+    <!-- Chat Header -->
+    <div id="chat-header" class="bg-gray-700 text-white p-4">
+      <h2 id="current-group-name" class="text-xl font-bold">Select a group</h2>
+    </div>
+
+    <!-- Messages -->
+    <div id="message-list" class="flex-1 p-4 overflow-y-auto">
+      <!-- Messages will be dynamically inserted here -->
+    </div>
+
+    <!-- Message Input -->
+    <div id="chat-input" class="p-4 bg-gray-200">
+      <form id="message-form" class="flex">
+        <input type="text" id="message-input" class="flex-1 border rounded-full py-2 px-4"
+          placeholder="Type a message...">
+        <button type="submit" class="ml-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full">
+          Send
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('token'); // JWT from login
+    const socket = io('http://localhost:5000', {
+      auth: { token }
+    });
+
+    // listen
+    socket.on('connect', () => console.log('connected', socket.id));
+    socket.on('new_message', msg => console.log('new message', msg));
+    socket.on('message_delivered', info => console.log('delivered', info));
+    socket.on('message_read', info => console.log('read', info));
+    socket.on('typing', (d) => {
+      console.log(d.username, d.isTyping ? 'typing...' : 'stopped');
+    });
+  </script>
+  <script src="/chat.js"></script>
+</body>
+
+</html>

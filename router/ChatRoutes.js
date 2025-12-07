@@ -4,6 +4,16 @@ import { Message } from '../model/ChatModel.js'
 
 export const ChatRouter = express.Router()
 
+ChatRouter.get('/:groupId', protect, async (req, res) => {
+    try {
+        const messages = await Message.find({ group: req.params.groupId })
+            .populate('sender', 'username email');
+        res.json(messages);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
 ChatRouter.post('/', protect, async (req, res) => {
 
     try {
@@ -16,12 +26,16 @@ ChatRouter.post('/', protect, async (req, res) => {
             content,
             group: group_id
         })
-        const populatedMessage = await Message.findById(message._id).populate('sender', 'username email')
+        const populatedMessage = await Message.findById(message._id)
+            .populate('sender', 'username email')
+            .populate('group', 'name');
+
+        // Emit the message to the group
+        req.io.to(group_id).emit('newMessage', populatedMessage);
+
         res.json(populatedMessage)
 
     } catch (error) {
         res.status(404).json(error.message)
-
     }
-
 })
