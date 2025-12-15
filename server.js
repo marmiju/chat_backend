@@ -9,12 +9,8 @@ import { userRouter } from './router/UserRoutes.js';
 import { GroupRouter } from './router/GroupRoutes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
 
-// file handaling
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 
 
@@ -51,6 +47,10 @@ const ioMiddleware = (req, res, next) => {
 app.use('/api/user', userRouter)
 app.use('/api/groups', GroupRouter)
 app.use('/api/chats', ioMiddleware, ChatRouter)
+
+app.get('/', (req, res) => {
+    res.send('API is running....');
+});
 
 
 // Start Server
