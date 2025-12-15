@@ -26,13 +26,17 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5000'],
+        origin: '*', //allow all domain
         credentials: true
     }
 });
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: '*', //allow all domain
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 app.use(express.json());
 // Connect DB
 connectDb();
@@ -48,12 +52,6 @@ app.use('/api/user', userRouter)
 app.use('/api/groups', GroupRouter)
 app.use('/api/chats', ioMiddleware, ChatRouter)
 
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/', (req, res) => {
-    res.redirect('/login.html');
-});
 
 // Start Server
 server.listen(PORT, () => {

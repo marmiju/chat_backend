@@ -32,7 +32,7 @@ Follow these steps to get the project up and running on your local machine.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/chat_backend.git
+    git clone https://github.com/marmiju/chat_backend.git
     cd chat_backend
     ```
 
@@ -44,8 +44,8 @@ Follow these steps to get the project up and running on your local machine.
 3.  **Create a `.env` file** in the root directory and add the following environment variables:
 
     ```env
-    PORT=5000
-    MONGO_URI=your_mongodb_connection_string
+    MONGO_USER=your_mongodb_username
+    MONGO_PASS=database_pass
     JWT_SECRET=your_jwt_secret
     ```
 
@@ -71,11 +71,6 @@ chat_backend/
 │   ├── ChatModel.js
 │   ├── GroupModel.js
 │   └── UserModel.js
-├── public/
-│   ├── chat.js
-│   ├── index.html
-│   ├── login.html
-│   └── login.js
 └── router/
     ├── ChatRoutes.js
     ├── GroupRoutes.js
@@ -111,18 +106,40 @@ The API is structured into three main resources: Users, Groups, and Chats.
 
 ## ⚡ Socket.IO Events
 
-The real-time functionality is handled by Socket.IO events.
+The real-time functionality is handled by Socket.IO events. The following tables outline the events that are listened for on the server (client-emitted) and the events that are emitted from the server to the client.
+
+### Client-Emitted Events
 
 | Event             | Payload                               | Description                               |
 | :---------------- | :------------------------------------ | :---------------------------------------- |
-| `join room`       | `{ "room": "group_id" }`              | Joins a user to a specific group's room.  |
-| `send message`    | `{ "room": "group_id", "text": "..." }` | Sends a message to a group.               |
-| `receive message` | `{ "sender": "...", "text": "..." }`   | Received when another user sends a message. |
+| `join_group`      | `{ "groupId": "group_id" }`           | Joins a user to a group.                  |
+| `leave_group`     | `{ "groupId": "group_id" }`           | Removes a user from a group.              |
+| `admin_add_member`| `{ "groupId": "group_id", "userIdToAdd": "user_id" }` | Adds a new member to a group (admin only). |
+| `admin_remove_member`| `{ "groupId": "group_id", "userIdToRemove": "user_id" }` | Removes a member from a group (admin only). |
+| `typing`          | `{ "groupId": "group_id", "isTyping": true }` | Broadcasts when a user is typing.         |
+| `message_read`    | `{ "messageId": "message_id" }`       | Marks a message as read.                  |
+| `send_message`    | `{ "groupId": "group_id", "content": "..." }` | Sends a message to a group.             |
+
+### Server-Emitted Events
+
+| Event             | Payload                               | Description                               |
+| :---------------- | :------------------------------------ | :---------------------------------------- |
+| `initialonline`   | `{ "groupId": "group_id", "users": [...] }` | Provides the initial list of online users in a group. |
+| `online_member`   | `{ "groupId": "group_id", "username": "...", "userId": "..." }` | Notifies when a user comes online.        |
+| `user_offline`    | `{ "userId": "user_id" }`             | Notifies when a user goes offline.        |
+| `member_joined`   | `{ "userId": "...", "username": "..." }` | Notifies when a new member joins a group. |
+| `member_left`     | `{ "userId": "...", "username": "..." }` | Notifies when a member leaves a group.    |
+| `member_added`    | `{ "userId": "...", "by": "..." }`    | Notifies when a member is added to a group by an admin. |
+| `member_removed`  | `{ "userId": "...", "by": "..." }`    | Notifies when a member is removed from a group by an admin. |
+| `removed_from_group` | `{ "groupId": "...", "by": "..." }` | Notifies a user that they have been removed from a group. |
+| `new_message`     | `{...messageObject}`                  | Sends a new message to the group.         |
+| `message_delivered` | `{ "messageId": "...", "to": "...", "at": "..." }` | Confirms that a message has been delivered. |
+| `message_read`      | `{ "messageId": "...", "userId": "...", "at": "..." }` | Confirms that a message has been read by a user. |
+| `typing`          | `{ "groupId": "...", "username": "...", "isTyping": true }` | Broadcasts that a user is typing to other members of a group. |
 
 ## 💡 Future Improvements
 
 - [ ] **Message Caching:** Implement Redis for caching messages to reduce database load.
-- [ ] **Typing Indicators:** Show when a user is typing a message.
 - [ ] **File Sharing:** Allow users to share images and other files.
 - [ ] **Push Notifications:** Add push notifications for new messages.
 
@@ -134,6 +151,4 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Developed By
-
-Azizar Rahman — [GitHub](https.github.com/marmiju)
+A complete backend system for real-time chat applications using **Express.js** and **Socket.IO**, with structured route handling for users, groups, and chat messages.

@@ -26,7 +26,7 @@ GroupRouter.post('/', protect, async (req, res) => {
 })
 
 GroupRouter.get('/', protect, async (req, res) => {
-    console.log(req.user)
+    
     try {
         const groups = await Group.find({
             members: req.user._id

@@ -1,106 +1,171 @@
 import jwt from 'jsonwebtoken'
-import { User } from './model/UserModel.js'
 import { Group } from './model/GroupModel.js';
-
-
+import { Message } from './model/ChatModel.js';
 
 const socketToUser = new Map()
 const onlineUsers = new Map()
 
 export const SocketIO = io => {
     // configure socket
-    io.use(async (socket, next) => {
+    io.use((socket, next) => {
+        const userStr = socket.handshake.auth?.user;
+        if (!userStr) return next(new Error("No user provided"));
         try {
-            const token = socket.handshake.auth?.token || socket.handshake.query?.token;
-            if (!token) {
-                return next(new Error('Authentication error'));
-            }
-            const decode = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await User.findById(decode.id).select('-password');
-            if (!user) {
-                return next(new Error('User not found'));
-            }
+            const user = JSON.parse(userStr);
             socket.data.user = user;
-            next(); // Call next on success
-        } catch (err) {
-            return next(new Error('Authentication error'));
+            next();
+        } catch (e) {
+            next(new Error("Invalid user JSON"));
         }
     });
-    // user connections 
-    io.on('connection', (socket) => {
-        const user = socket.data.user
-        if (!user) return socket.disconnect(true)
-        // track socket - user
-        socketToUser.set(socket.id, user._id.toString())
-        if (!onlineUsers.has(user._id.toString())) {
-            onlineUsers.set(user._id.toString(), new Set())
-        }
-        onlineUsers.get(user._id.toString()).add(socket.id)
-        console.log(`User connected: ${user.username} (${user._id}) socket: ${socket.id}`);
 
-        (async () => {
-            const groups = await Group.find({ members: user._id }).select('_id');
-            console.log("groups", groups)
-            for (const g of groups) {
-                socket.to(g._id.toString()).emit('user_online', { userId: user._id.toString() });
+    // user connections 
+    io.on("connection", async (socket) => {
+        const user = socket.data.user;
+        if (!user) return socket.disconnect(true);
+        const userId = user._id.toString();
+        // Track user sockets
+        socketToUser.set(socket.id, userId);
+
+        if (!onlineUsers.has(userId)) {
+            onlineUsers.set(userId, new Set());
+        }
+        onlineUsers.get(userId).add(socket.id);
+
+        console.log("User connected:", user.username);
+
+        // Get all groups where this user is member
+        const groups = await Group.find({ members: userId }).populate('members', '_id username');
+
+        for (const g of groups) {
+            let onlineList = [];
+            socket.join(g._id.toString());
+            // Get online users of this group
+            for (const member of g.members) {
+                const mId = member._id.toString();
+                if (onlineUsers.has(mId) && onlineUsers.get(mId).size > 0) {
+                    onlineList.push({
+                        username: member.username,
+                        userId: mId
+                    });
+                }
             }
-        })();
+            socket.emit("initialonline", {
+                groupId: g._id.toString(),
+                users: onlineList
+            });
+
+            socket.to(g._id.toString()).emit("online_member", {
+                groupId: g._id.toString(),
+                username: user.username,
+                userId: userId
+            });
+        }
 
         // join in group
         socket.on('join_group', async ({ groupId }, ack) => {
             try {
+                const userId = user._id.toString();
+                //  Validate group
                 const group = await Group.findById(groupId);
-                if (!group) return ack?.({ status: 'error', message: 'Group not found' });
-
-                if (group.members.map(m => m.toString()).includes(user._id.toString())) {
-                    return ack?.({ status: 'error', message: 'Not a member of this group' });
+                if (!group) {
+                    return ack?.({ status: 'error', message: 'Group not found' });
                 }
+                //  Check membership
+                const isMember = group.members.some(
+                    m => m.toString() === userId
+                );
 
-                socket.join(groupId)
-
+                if (isMember) {
+                    return ack?.({ status: 'error', message: 'Already a member' });
+                }
+                //  Update DB (automic push)
+                await Group.updateOne(
+                    { _id: groupId },
+                    { $push: { members: userId } }
+                );
+                //  Join socket room
+                socket.join(groupId);
+                //  Notify others
                 socket.to(groupId).emit('member_joined', {
-                    userId: user._id.toString(),
+                    userId,
                     username: user.username
-                })
-
-                // send status
-                ack?.({ status: 'ok' });
-
+                });
+                //  Ack success
+                ack?.({
+                    status: 'ok',
+                    message: 'Joined group successfully'
+                });
             } catch (err) {
-                ack?.({ status: 'error', message: err.message });
+                console.error('join_group error:', err);
+                ack?.({
+                    status: 'error',
+                    message: 'Internal server error'
+                });
             }
-        })
+        });
+
 
         // leave from group
 
         socket.on('leave_group', async ({ groupId }, ack) => {
             try {
-                const group = await Group.findById(groupId);
-                if (!group) return ack?.({ status: 'error', message: 'Group not found' });
+                const userId = user._id.toString();
 
+                //  Validate group
+                const group = await Group.findById(groupId);
+                if (!group) {
+                    return ack?.({ status: 'error', message: 'Group not found' });
+                }
+
+                //  Check membership
+                const isMember = group.members.some(
+                    m => m.toString() === userId
+                );
+
+                if (!isMember) {
+                    return ack?.({ status: 'error', message: 'You are not a member of this group' });
+                }
+
+                //  Remove from DB (atomic)
+                await Group.updateOne(
+                    { _id: groupId },
+                    { $pull: { members: userId } }
+                );
+
+                //  Leave socket room
                 socket.leave(groupId);
 
+                //  Notify others
                 socket.to(groupId).emit('member_left', {
-                    userId: user._id.toString(),
+                    userId,
                     username: user.username
                 });
 
-                ack?.({ status: 'ok' });
+                //  Ack success
+                ack?.({
+                    status: 'ok',
+                    message: 'Left group successfully'
+                });
+
             } catch (err) {
-                ack?.({ status: 'error', message: err.message });
+                console.error('leave_group error:', err);
+                ack?.({
+                    status: 'error',
+                    message: 'Internal server error'
+                });
             }
         });
 
         socket.on('send_message', async (data, ack) => {
+            console.log('send_message event received:', data);
             try {
                 // get payload from front-end
                 const { groupId, content } = data;
-                if (!groupId, !content) return ack?.({ status: 'error', message: 'Invalid payload' });
-                // 
+
                 const group = await Group.findById(groupId).populate('members', '_id username email')
                 if (!group)
                     return ack?.({ status: 'error', message: 'Group not found' });
-
 
                 const deliveries = group.members.map(m => ({
                     user: m._id,
@@ -116,7 +181,7 @@ export const SocketIO = io => {
                 });
 
                 const populated = await Message.findById(message._id)
-                    .populate('sender', 'username email');
+                    .populate('sender', 'username email').populate('deliveries.user', 'username');
 
                 io.to(groupId).emit('new_message', populated);
 
@@ -173,11 +238,14 @@ export const SocketIO = io => {
 
         // typing indecator
         socket.on('typing', ({ groupId, isTyping }) => {
-            socket.to(groupId).emit('typing', {
-                userId: user._id.toString(),
-                username: user.username,
-                isTyping
-            });
+            console.log('typing ', user.username)
+            if (isTyping) {
+                socket.to(groupId).emit('typing', {
+                    groupId: groupId,
+                    username: user.username,
+                    isTyping
+                });
+            }
         });
 
         // admin add group member
@@ -258,6 +326,7 @@ export const SocketIO = io => {
                 }
             }
             console.log(`socket disconnected: ${socket.id}`);
+            console.log(onlineUsers)
         });
     }) // end of the connection with scket
 

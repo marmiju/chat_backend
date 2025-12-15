@@ -4,18 +4,16 @@ import { Message } from '../model/ChatModel.js'
 
 export const ChatRouter = express.Router()
 
-ChatRouter.get('/:groupId', protect, async (req, res) => {
+ChatRouter.get('/:groupId', async (req, res) => {
     try {
-        const messages = await Message.find({ group: req.params.groupId })
-            .populate('sender', 'username email');
+        const messages = await Message.find({ group: req.params.groupId,}).sort({ createdAt: -1 })
+            .populate('sender', 'username email').populate('deliveries.user', 'username');;
         res.json(messages);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 });
-
 ChatRouter.post('/', protect, async (req, res) => {
-
     try {
         const { content, group_id } = req.body
         if (!content || !group_id) {

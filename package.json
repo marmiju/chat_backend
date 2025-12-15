@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "A complete backend system for real-time chat applications using **Express.js** and **Socket.IO**, with structured route handling for users, groups, and chat messages.",
   "dependencies": {
     "bcryptjs": "^3.0.2",
