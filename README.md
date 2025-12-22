@@ -5,10 +5,11 @@ A powerful and scalable backend for real-time chat applications, built with Node
 ## ✨ Features
 
 - **Real-Time Communication:** Instant messaging with Socket.IO.
-- **User Authentication:** Secure user registration and login.
+- **User Authentication:** Secure user registration and login with jwt.
 - **Group Chats:** Create and manage chat groups.
 - **RESTful API:** A well-structured API for users, groups, and messages.
 - **Scalable Architecture:** Modular design for easy expansion.
+- **message status tracking:** sent, delivired and read per user
 
 ## 🛠️ Tech Stack
 
@@ -87,13 +88,14 @@ The API is structured into three main resources: Users, Groups, and Chats.
 | :----- | :------------------- | :----------------------- |
 | `POST` | `/api/user/register` | Register a new user      |
 | `POST` | `/api/user/login`    | Log in an existing user  |
-| `GET`  | `/api/user/profile`  | Get the user's profile   |
+| `POST` | `/api/user/search?username`    | search user and join in group |
+
 
 ### Group Routes
 
 | Method | Endpoint             | Description              |
 | :----- | :------------------- | :----------------------- |
-| `POST` | `/api/group/create`  | Create a new group       |
+| `POST` | `/api/groups`        | Create a new group       |
 | `GET`  | `/api/group/:id`     | Get group details by ID  |
 | `POST` | `/api/group/add-user`| Add a user to a group    |
 

@@ -61,5 +61,24 @@ userRouter.post('/login', async (req, res) => {
 })
 
 
+// search user by username
+userRouter.get('/search', async (req, res) => {
+    try {
+        const { username } = req.query;
+        const user = await User.findOne({ username });
+        if (user) {
+            res.json({
+                _id: user._id,
+                username: user.username,
+                email: user.email
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
 const generate_token = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
