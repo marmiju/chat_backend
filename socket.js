@@ -59,8 +59,11 @@ export const SocketIO = io => {
                 },
                 {
                     $set: {
-                        'deliveries.$.status': 'delivered',
-                        'deliveries.$.at': new Date()
+                        deliveries: {
+                            user: userId,
+                            status: "delivered",
+                            at: new Date()
+                        }
                     }
                 }
             );
@@ -93,7 +96,7 @@ export const SocketIO = io => {
                 socket.join(groupId);
                 ack?.({
                     status: 'ok',
-                    message: 'Group created and joined successfully'
+                    message: 'Group created!'
                 });
                 await Message.create({
                     sender: user._id,
