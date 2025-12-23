@@ -24,7 +24,7 @@ const io = new Server(server, {
   cors: {
     origin: [
       'http://localhost:3000',
-      'https://chat-frontend-xyz.vercel.app'
+      'https://chat-backend-0o2r.onrender.com'
     ],
     methods: ['GET', 'POST'],
     credentials: true
@@ -36,7 +36,7 @@ const io = new Server(server, {
 app.use(cors({
     origin: [
         'http://localhost:3000',
-        'https://chat-frontend-xyz.vercel.app'
+        'https://chat-backend-0o2r.onrender.com'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true

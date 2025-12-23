@@ -59,11 +59,8 @@ export const SocketIO = io => {
                 },
                 {
                     $set: {
-                        deliveries: {
-                            user: userId,
-                            status: "delivered",
-                            at: new Date()
-                        }
+                        'deliveries.$.status': 'delivered',
+                        'deliveries.$.at': new Date()
                     }
                 }
             );
