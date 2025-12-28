@@ -2,17 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { configDotenv } from 'dotenv';
-import { connectDb } from './Database/db.js';
+import { connectDb } from './config/db.js';
 import { SocketIO } from './socket.js';
 import { Server } from 'socket.io';
-import { userRouter } from './router/UserRoutes.js';
+import  userRouter  from './router/User.Routes.js';
 import { GroupRouter } from './router/GroupRoutes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
-
-
-
-
-
+import { errorHandler } from './middlewares/error.middleware.js';
 
 // configuration
 configDotenv();
@@ -31,6 +27,8 @@ const io = new Server(server, {
   }
 });
 
+app.use(express.json());
+app.use(errorHandler)
 
 // Middlewares
 app.use(cors({
@@ -42,7 +40,6 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
 // Connect DB
 connectDb();
 // Socket
