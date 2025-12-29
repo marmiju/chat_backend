@@ -5,7 +5,7 @@ import { configDotenv } from 'dotenv';
 import { connectDb } from './config/db.js';
 import { SocketIO } from './socket.js';
 import { Server } from 'socket.io';
-import  userRouter  from './router/User.Routes.js';
+import userRouter from './router/User.Routes.js';
 import { GroupRouter } from './router/GroupRoutes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
@@ -28,16 +28,16 @@ const io = new Server(server, {
 });
 
 app.use(express.json());
-app.use(errorHandler)
+
 
 // Middlewares
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'https://chat-backend-0o2r.onrender.com'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+  origin: [
+    'http://localhost:3000',
+    'https://chat-backend-0o2r.onrender.com'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
 }));
 
 // Connect DB
@@ -46,8 +46,12 @@ connectDb();
 SocketIO(io);
 //? Routers
 const ioMiddleware = (req, res, next) => {
+  try {
     req.io = io;
     next();
+  } catch (err) {
+    console.log(err)
+  }
 };
 
 app.use('/api/user', userRouter)
@@ -55,11 +59,12 @@ app.use('/api/groups', GroupRouter)
 app.use('/api/chats', ioMiddleware, ChatRouter)
 
 app.get('/', (req, res) => {
-    res.send('API is running....');
+  res.send('API is running....');
 });
+app.use(errorHandler)
 
 
 // Start Server
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

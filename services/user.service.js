@@ -3,10 +3,9 @@ import { generateToken } from '../utils/jwt.util.js'
 
 export const register = async ({ username, email, password }) => {
   const exists = await findByEmail(email)
-  if (exists) throw new Error('Email already exists')
-
+  if (exists) return {message: 'email allready exist'}
   const user = await createUser({ username, email, password })
-
+  
   return {
     _id: user._id,
     username: user.username,
