@@ -3,7 +3,6 @@ import { User } from '../model/user.model.js';
 import { Group } from '../model/GroupModel.js';
 
 export const protect = async (req, res, next) => {
-    console.log(req.headers)
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {

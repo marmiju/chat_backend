@@ -4,7 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "start": "nodemon server.js"
   },
   "keywords": [],
@@ -13,6 +13,7 @@
   "description": "A complete backend system for real-time chat applications using **Express.js** and **Socket.IO**, with structured route handling for users, groups, and chat messages.",
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -28,5 +29,9 @@
   "bugs": {
     "url": "https://github.com/marmiju/chat_backend/issues"
   },
-  "homepage": "https://github.com/marmiju/chat_backend#readme"
+  "homepage": "https://github.com/marmiju/chat_backend#readme",
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
+  }
 }

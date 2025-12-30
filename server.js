@@ -14,7 +14,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 configDotenv();
 const PORT = process.env.PORT || 5000;
 const app = express();
-const server = http.createServer(app);
+export const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
