@@ -13,51 +13,51 @@ on:
 
 
 jobs:
-    test_and_deploy:
-        runs-on: ubuntu-latest
+  test_and_deploy:
+    runs-on: ubuntu-latest
+    env:
+      MONGO_USER: ${{ secrets.MONGO_USER }}
+      MONGO_PASS: ${{ secrets.MONGO_PASS }}
+      MONGO_DB: ${{ secrets.MONGO_DB }}
+      NODE_ENV: test
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-        steps:
-            # checkout repository
-            - name: checkout code
-              uses: actions/checkout@v6
-            
-            - name: node.js setup
-              uses:  actions/setup-node@v4
-              with:
-                node-version: 20
-            
-            - name: install dependencies
-              run: npm install
-            
-            - name: run jest tests
-              run: npm test
-            
-            # docker tag based on branch
-            - name: set docker tag
-              id: docker-tag
-              run: |
-                if [["${GITHUB_REF##*/}" == "main"]] ; then
-                    echo "tag=latest" >> $GITHUB_ENV
-                elif [[ "${GITHUB_REF##*/}" == "authentication" ]]; then
-                    echo "tag=authentication" >> $GITHUB_ENV
-                else
-                    echo "tag=unknown" >> $GITHUB_ENV
-            
-            - name: Build Docker image
-              run: docker build -t chat-backend:${{ env.tag }} .
-            
-            - name: Login to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                username: ${{ secrets.DOCKER_USERNAME }}
-                password: ${{ secrets.DOCKER_PASSWORD }}
-            
-            - name: Push Docker image
-              run: |
-                docker tag chat-backend:${{ env.tag }} ${{ secrets.DOCKER_USERNAME }}/chat-backend:${{ env.tag }}
-                docker push ${{ secrets.DOCKER_USERNAME }}/chat-backend:${{ env.tag }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            
+      - name: Install dependencies
+        run: npm install
 
+      - name: Run Jest tests
+        run: npm test
 
+      - name: Set Docker tag
+        id: docker-tag
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            echo "tag=latest" >> $GITHUB_ENV
+          elif [[ "$BRANCH_NAME" == "authentication" ]]; then
+            echo "tag=authentication" >> $GITHUB_ENV
+          else
+            echo "tag=unknown" >> $GITHUB_ENV
+          fi
+
+      - name: Build Docker image
+        run: docker build -t chat-backend:${{ env.tag }} .
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: |
+          docker tag chat-backend:${{ env.tag }} ${{ secrets.DOCKER_USERNAME }}/chat-backend:${{ env.tag }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/chat-backend:${{ env.tag }}
