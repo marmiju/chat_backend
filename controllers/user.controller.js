@@ -14,6 +14,7 @@ export const loginUser = async (req, res, next) => {
     const data = await userService.login(req.validated.body)
     res.json(data)
   } catch (err) {
+    console.log(err)
     next(err)
   }
 }
