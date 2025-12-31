@@ -32,6 +32,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+      - name: Print environment variables
+        run: |
+          echo "NODE_ENV=$NODE_ENV"
+          echo "JWT_SECRET=$JWT_SECRET"
+
 
       - name: Run Jest tests
         run: npm test
