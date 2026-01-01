@@ -1,0 +1,16 @@
+
+services:
+  backend:
+    build: .
+    container_name: chat-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.test
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+volumes:
+  mongo_test_data:
+
