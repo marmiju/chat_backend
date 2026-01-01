@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import { configDotenv } from "dotenv";
+import { MONGO_PASS, MONGO_USER } from "./env.js";
 
-configDotenv();
 
-const username = encodeURIComponent(process.env.MONGO_USER);
-const pass = encodeURIComponent(process.env.MONGO_PASS);
+const username = encodeURIComponent(MONGO_USER);
+const pass = encodeURIComponent(MONGO_PASS);
 const dbname = "chatApp";
 
-const mongoString = process.env.NODE_ENV === 'test' ? process.env.MONGO_URI : `mongodb+srv://${username}:${pass}@cluster0.smwmg.mongodb.net/${dbname}?appName=Cluster0`;
+const mongoString = `mongodb+srv://${username}:${pass}@cluster0.smwmg.mongodb.net/${dbname}?appName=Cluster0`;
+console.log(mongoString)
 
 export const connectDb = () => {
   mongoose.connect(mongoString)
