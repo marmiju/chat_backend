@@ -9,6 +9,7 @@ import userRouter from './router/User.Routes.js';
 import { GroupRouter } from './router/GroupRoutes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import healthroute from './router/health.routes.js';
 
 // configuration
 configDotenv();
@@ -54,6 +55,7 @@ const ioMiddleware = (req, res, next) => {
   }
 };
 
+app.use('/health', healthroute)
 app.use('/api/user', userRouter)
 app.use('/api/groups', GroupRouter)
 app.use('/api/chats', ioMiddleware, ChatRouter)
