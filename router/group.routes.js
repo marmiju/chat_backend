@@ -7,7 +7,7 @@ import { Creategroup } from '../services/group.service.js';
 
 export const GroupRouter = express.Router()
 
-GroupRouter.post('/', protect, validate(createGroupSchema), Creategroup )
+GroupRouter.post('/', protect, validate(createGroupSchema), Creategroup)
 
 GroupRouter.get('/', protect, async (req, res) => {
     try {
