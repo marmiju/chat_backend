@@ -5,11 +5,13 @@ on:
         branches:
           - main
           - authentication
+          - groups
     
     pull_request:
         branches:
           - main
           - authentication
+          - groups
 
 jobs:
   test_and_deploy:
