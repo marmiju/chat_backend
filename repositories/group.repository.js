@@ -1,4 +1,4 @@
-import { Group } from "../model/GroupModel";
+import { Group } from "../model/GroupModel.js";
 
 // create group
 export const CreateGroupRepo = async (name, description,userId) => {

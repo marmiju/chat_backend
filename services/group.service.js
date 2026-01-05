@@ -1,4 +1,4 @@
-import { CreateGroupRepo } from "../repositories/group.repository";
+import { CreateGroupRepo } from "../repositories/group.repository.js";
 
 
 
