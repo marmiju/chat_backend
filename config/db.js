@@ -1,16 +1,19 @@
 import mongoose from "mongoose";
-import { MONGO_PASS, MONGO_USER } from "./env.js";
+import { MONGO_URL } from "./env.js";
+import { configDotenv } from "dotenv";
+
+configDotenv()
+
+// ===========
 
 
-const username = encodeURIComponent(MONGO_USER);
-const pass = encodeURIComponent(MONGO_PASS);
-const dbname = "chatApp";
+  export const connectDb = async () => {
+    try {
+      await mongoose.connect(MONGO_URL);
+      console.log("✅ MongoDB connected");
+    } catch (err) {
+      console.error("❌ MongoDB connection failed", err.message);
+      process.exit(1);
+    }
+  };
 
-const mongoString = `mongodb+srv://${username}:${pass}@cluster0.smwmg.mongodb.net/${dbname}?appName=Cluster0`;
-console.log(mongoString)
-
-export const connectDb = () => {
-  mongoose.connect(mongoString)
-    .then(() => console.log("✅ MongoDB connected"))
-    .catch((err) => console.error("❌ MongoDB connection failed", err));
-};
