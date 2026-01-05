@@ -1,8 +1,6 @@
 
 
-export const validate =
-  (schema) =>
-    async (req, res, next) => {
+export const validate = (schema) => (req, res, next) => {
 
       // Combine all possible inputs
       const payload = {
@@ -10,7 +8,7 @@ export const validate =
         query: req.query,
         params: req.params
       }
-      const result = await schema.safeParseAsync(payload)
+      const result =  schema.safeParse(payload)
 
       if (!result.success) {
         return res.status(422).json({

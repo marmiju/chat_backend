@@ -1,32 +1,15 @@
 import express from 'express'
 import { Group } from '../model/GroupModel.js';
 import { isAdmin, protect } from '../middlewares/AuthMidlewares.js';
+import { validate } from '../middlewares/validate.midleware.js';
+import { createGroupSchema, joinAtgroupSchema } from '../validators/group.validator.js';
+import { Creategroup } from '../services/group.service.js';
 
 export const GroupRouter = express.Router()
 
-GroupRouter.post('/', protect, async (req, res) => {
-    try {
-        const { name, description } = req.body;
-        const group = await Group.create({
-            name,
-            description,
-            admin: req.user._id,
-            members: [req.user._id]
-
-        })
-        const polulatedGroup = await Group.findById(group._id)
-            .populate('admin', 'username email')
-            .populate('members', 'username email');
-        res.status(201).json(polulatedGroup)
-
-    } catch (err) {
-        console.log(err)
-        res.status(400).json({ message: err.message })
-    }
-})
+GroupRouter.post('/', protect, validate(createGroupSchema), Creategroup )
 
 GroupRouter.get('/', protect, async (req, res) => {
-
     try {
         const groups = await Group.find({
             members: req.user._id
@@ -37,18 +20,19 @@ GroupRouter.get('/', protect, async (req, res) => {
     }
 })
 
-GroupRouter.post('/:group_id/join', protect, async (req, res) => {
+GroupRouter.get('/:groupId/join/:userId', protect, validate(joinAtgroupSchema), async (req, res) => {
     try {
-        const group = await Group.findById(req.params.group_id)
+        const group = await Group.findById(req.validated.params.groupId)
         if (!group) {
             return res.status(404).json({ message: 'group Not Found' })
         }
-        if (group.members.includes(req.user._id)) {
-            return res.status(201).json({ message: 'already membered in this group' })
+        if (group.members.filter(m => m.equals(req.validated.params.userId))) {
+            return res.status(409).json({ message: 'User already a member of this group' });
         }
-        console.log('joinded')
         group.members.push(req.user._id)
         await group.save()
+        console.log('joinded')
+        return res.status(201).json({ message: 'user added in group', group })
     } catch (err) {
         console.log(err.message)
     }
@@ -84,7 +68,7 @@ GroupRouter.delete('/:group_id/remove', protect, isAdmin, async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 })
-GroupRouter.get('/:group_id', protect, async (req, res) => {
+GroupRouter.get('/:groupId', protect, async (req, res) => {
     try {
         const group = await Group.findById(req.params.group_id).populate('admin', 'username email').populate('members', 'username email')
         if (!group) {

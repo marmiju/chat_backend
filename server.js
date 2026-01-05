@@ -6,7 +6,7 @@ import { connectDb } from './config/db.js';
 import { SocketIO } from './socket.js';
 import { Server } from 'socket.io';
 import userRouter from './router/User.Routes.js';
-import { GroupRouter } from './router/GroupRoutes.js';
+import { GroupRouter } from './router/group.routes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import healthroute from './router/health.routes.js';
@@ -67,6 +67,8 @@ app.use(errorHandler)
 
 
 // Start Server
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

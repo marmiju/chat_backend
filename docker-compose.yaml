@@ -1,4 +1,3 @@
-
 services:
   backend:
     build: .
@@ -6,20 +5,39 @@ services:
     ports:
       - "5000:5000"
     environment:
+      
       - MONGO_URI=mongodb://mongo:27017/chatApp_test
+      - JWT_SECRET=1234
     depends_on:
       - mongo
     restart: unless-stopped
   
+  # mongo 
   mongo:
     container_name: mongo
     image: mongo
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    
+
+
+# mongo express
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      # This connects Mongo Express to the 'mongo' container
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      # Login credentials for the web interface
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=1234
+    depends_on:
+      - mongo
 
 volumes:
   mongo_data:
-
