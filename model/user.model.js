@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    unique: true,
     trim: true,
     lowercase: true
   },
@@ -26,17 +27,16 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// hashed password befor save User
-userSchema.pre('save', async function (next) {
+// hashed password before save User
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    return next();
+    return;
   }
   this.password = await bcrypt.hash(this.password, 10);
-  next(); //  add this also
 });
 
 
-//  compare password are matches or not
+// compare password are matches or not
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

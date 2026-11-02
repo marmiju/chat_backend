@@ -1,10 +1,12 @@
 import request from "supertest";
 import { server } from "../server.js";
-
-
-
+import { User } from "../model/user.model.js";
 
 describe("Auth API", () => {
+  beforeAll(async () => {
+    await User.deleteMany({ email: "test@test.com" });
+  });
+
   it("should register a user", async () => {
     const res = await request(server)
       .post("/api/user/register")
@@ -17,3 +19,4 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(201);
   });
 });
+

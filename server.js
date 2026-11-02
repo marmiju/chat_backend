@@ -2,72 +2,61 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { configDotenv } from 'dotenv';
+import { Server } from 'socket.io';
 import { connectDb } from './config/db.js';
 import { SocketIO } from './socket.js';
-import { Server } from 'socket.io';
 import userRouter from './router/User.Routes.js';
 import { GroupRouter } from './router/group.routes.js';
 import { ChatRouter } from './router/ChatRoutes.js';
-import { errorHandler } from './middlewares/error.middleware.js';
 import healthroute from './router/health.routes.js';
+import { errorHandler } from './middlewares/error.middleware.js';
 
-// configuration
 configDotenv();
+
 const PORT = process.env.PORT || 5000;
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://chat-backend-0o2r.onrender.com',
+];
+
+const createCorsConfig = (methods) => ({
+  origin: ALLOWED_ORIGINS,
+  methods,
+  credentials: true,
+});
+
+const withSocketIO = (ioInstance) => (req, _res, next) => {
+  req.io = ioInstance;
+  next();
+};
+
 const app = express();
 export const server = http.createServer(app);
-
 const io = new Server(server, {
-  cors: {
-    origin: [
-      'http://localhost:3000',
-      'https://chat-backend-0o2r.onrender.com'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+  cors: createCorsConfig(['GET', 'POST']),
 });
 
 app.use(express.json());
+app.use(cors(createCorsConfig(['GET', 'POST', 'PUT', 'DELETE'])));
 
-
-// Middlewares
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://chat-backend-0o2r.onrender.com'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-
-// Connect DB
+// Initialize database and real-time socket server
 connectDb();
-// Socket
 SocketIO(io);
-//? Routers
-const ioMiddleware = (req, res, next) => {
-  try {
-    req.io = io;
-    next();
-  } catch (err) {
-    console.log(err)
-  }
-};
 
-app.use('/health', healthroute)
-app.use('/api/user', userRouter)
-app.use('/api/groups', GroupRouter)
-app.use('/api/chats', ioMiddleware, ChatRouter)
+// Routes
+const attachIO = withSocketIO(io);
+app.use('/health', healthroute);
+app.use('/api/user', userRouter);
+app.use('/api/groups', attachIO, GroupRouter);
+app.use('/api/chats', attachIO, ChatRouter);
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('API is running....');
 });
-app.use(errorHandler)
 
+app.use(errorHandler);
 
-// Start Server
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

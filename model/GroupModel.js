@@ -8,13 +8,17 @@ const groupSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true,
+        default: '',
         trim: true
     },
 
     admin: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    isDirect: {
+        type: Boolean,
+        default: false
     },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true })

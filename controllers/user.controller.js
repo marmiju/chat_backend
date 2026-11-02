@@ -1,31 +1,18 @@
-import * as userService from '../services/user.service.js'
+import * as userService from '../services/user.service.js';
+import { asyncHandler } from '../utils/async.util.js';
 
-export const registerUser = async (req, res, next) => {
-  try {
-    const user = await userService.register(req.validated.body)
-    res.status(201).json(user)
-  } catch (err) {
-    next(err)
-  }
-}
+export const registerUser = asyncHandler(async (req, res) => {
+  const user = await userService.register(req.validated.body);
+  res.status(201).json(user);
+});
 
-export const loginUser = async (req, res, next) => {
-  try {
-    const data = await userService.login(req.validated.body)
-    res.json(data)
-  } catch (err) {
-    console.log(err)
-    next(err)
-  }
-}
+export const loginUser = asyncHandler(async (req, res) => {
+  const data = await userService.login(req.validated.body);
+  res.json(data);
+});
 
-export const searchUser = async (req, res, next) => {
-  const {username} = req.query
-  console.log(username)
-  try {
-    const user = await userService.searchByUsername(username)
-    res.json(user)
-  } catch (err) {
-    next(err)
-  }
-}
+export const searchUser = asyncHandler(async (req, res) => {
+  const { username } = req.validated?.query || req.query;
+  const users = await userService.searchByUsername(username);
+  res.json(users);
+});
