@@ -1,9 +1,12 @@
 import { Group } from '../model/GroupModel.js';
 
+const USER_PUBLIC_FIELDS =
+  'username email displayName avatar bio title statusText phone';
+
 const withPopulatedGroup = (query) =>
   query
-    .populate('admin', 'username email')
-    .populate('members', 'username email');
+    .populate('admin', USER_PUBLIC_FIELDS)
+    .populate('members', USER_PUBLIC_FIELDS);
 
 export const findGroupById = (groupId) =>
   Group.findById(groupId);
@@ -56,11 +59,13 @@ export const createDirectGroupRepo = async ({
 export const CreateGroupRepo = createGroupRepo;
 
 export const addMemberToGroupRepo = async (groupId, userId) => {
-  await Group.updateOne(
-    { _id: groupId },
+  const result = await Group.updateOne(
+    { _id: groupId, members: { $ne: userId } },
     { $addToSet: { members: userId } }
   );
-  return findPopulatedGroupById(groupId);
+  const group = await findPopulatedGroupById(groupId);
+  group.$alreadyMember = result.modifiedCount === 0;
+  return group;
 };
 
 export const removeMemberFromGroupRepo = async (groupId, userId) => {

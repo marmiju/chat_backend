@@ -1,6 +1,7 @@
 import {
   getGroupMessagesService,
   sendMessageService,
+  markMessagesAsReadService,
 } from '../services/chat.service.js';
 import { asyncHandler } from '../utils/async.util.js';
 
@@ -30,5 +31,19 @@ export const sendMessage = asyncHandler(async (req, res) => {
   });
 
   return res.status(201).json(populatedMessage);
+});
+
+export const markGroupMessagesRead = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const { unreadIds } = req.body || {};
+
+  const updatedMessages = await markMessagesAsReadService({
+    groupId,
+    unreadIds,
+    userId: req.user._id,
+    io: req.io,
+  });
+
+  return res.status(200).json(updatedMessages);
 });
 

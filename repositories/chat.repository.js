@@ -1,10 +1,13 @@
 import { Message } from '../model/ChatModel.js';
 
+const USER_PUBLIC_FIELDS =
+  'username email displayName avatar bio title statusText phone';
+
 const withPopulatedMessage = (query) =>
   query
-    .populate('sender', 'username email')
+    .populate('sender', USER_PUBLIC_FIELDS)
     .populate('group', 'name')
-    .populate('deliveries.user', 'username');
+    .populate('deliveries.user', 'username displayName avatar');
 
 export const createMessageRepo = async ({
   sender,
@@ -45,7 +48,7 @@ export const findMessagesByGroupRepo = (groupId, { limit = 50, before } = {}) =>
 };
 
 export const markGroupMessagesDeliveredRepo = async (groupId, userId) => {
-  await Message.updateMany(
+  const result = await Message.updateMany(
     {
       group: groupId,
       sender: { $ne: userId },
@@ -59,6 +62,10 @@ export const markGroupMessagesDeliveredRepo = async (groupId, userId) => {
     }
   );
 
+  if (!result.modifiedCount) {
+    return [];
+  }
+
   return withPopulatedMessage(
     Message.find({
       group: groupId,
@@ -70,28 +77,63 @@ export const markGroupMessagesDeliveredRepo = async (groupId, userId) => {
 };
 
 export const markMessagesAsReadRepo = async ({ groupId, unreadIds, userId }) => {
+  const now = new Date();
+  const baseFilter = {
+    group: groupId,
+    sender: { $ne: userId },
+  };
   if (Array.isArray(unreadIds) && unreadIds.length > 0) {
-    await Message.updateMany(
-      {
-        _id: { $in: unreadIds },
-        deliveries: { $elemMatch: { user: userId, status: { $ne: 'read' } } },
+    baseFilter._id = { $in: unreadIds };
+  }
+
+  // Update existing delivery entries for this user to 'read'
+  const updateExisting = await Message.updateMany(
+    {
+      ...baseFilter,
+      deliveries: { $elemMatch: { user: userId, status: { $ne: 'read' } } },
+    },
+    {
+      $set: {
+        'deliveries.$.status': 'read',
+        'deliveries.$.at': now,
       },
-      {
-        $set: {
-          'deliveries.$.status': 'read',
-          'deliveries.$.at': new Date(),
+    }
+  );
+
+  // Also add 'read' delivery entry if the user wasn't in deliveries yet
+  const updateMissing = await Message.updateMany(
+    {
+      ...baseFilter,
+      type: 'message',
+      'deliveries.user': { $ne: userId },
+    },
+    {
+      $push: {
+        deliveries: {
+          user: userId,
+          status: 'read',
+          at: now,
         },
-      }
-    );
+      },
+    }
+  );
+
+  const totalModified =
+    (updateExisting.modifiedCount || 0) + (updateMissing.modifiedCount || 0);
+
+  if (totalModified === 0 && (!Array.isArray(unreadIds) || unreadIds.length === 0)) {
+    return [];
   }
 
   return withPopulatedMessage(
     Message.find({
       group: groupId,
-      deliveries: { $elemMatch: { user: userId, status: 'read' } },
+      ...(Array.isArray(unreadIds) && unreadIds.length > 0
+        ? { _id: { $in: unreadIds } }
+        : { deliveries: { $elemMatch: { user: userId, status: 'read' } } }),
     })
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(100)
   );
 };
 

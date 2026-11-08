@@ -15,6 +15,7 @@ import {
   buildInitialDeliveries,
   getOnlineMembersForGroup,
 } from './presence.service.js';
+import { sendPushNotificationToUsers } from './push.service.js';
 import { badRequest, forbidden } from '../utils/error.util.js';
 
 export const getGroupMessagesService = async ({
@@ -56,10 +57,51 @@ export const sendMessageService = async ({
     deliveries,
   });
 
+  const room = toIdString(groupId);
+  const senderIdStr = toIdString(senderId);
+  const recipientIds = (group.members || [])
+    .map((m) => toIdString(m))
+    .filter((id) => id && id !== senderIdStr);
+
+  const senderObj =
+    typeof populatedMessage.sender === 'object' && populatedMessage.sender
+      ? populatedMessage.sender
+      : null;
+  const senderName =
+    senderObj?.displayName || senderObj?.username || 'Someone';
+  const isDirect = Boolean(
+    group.isDirect || String(group.name || '').startsWith('dm-')
+  );
+  const notificationTitle = isDirect
+    ? senderName
+    : `${senderName} in #${group.name}`;
+
+  const notificationPayload = {
+    type: 'message',
+    title: notificationTitle,
+    body: content,
+    groupId: room,
+    groupName: group.name,
+    isDirect,
+    senderId: senderIdStr,
+    senderName,
+    senderAvatar: senderObj?.avatar || '',
+    messageId: toIdString(populatedMessage._id),
+    url: `/channels/${room}`,
+    createdAt: populatedMessage.createdAt || new Date().toISOString(),
+  };
+
   if (io) {
-    const room = toIdString(groupId);
     io.to(room).emit('new_message', populatedMessage);
     io.to(room).emit('newMessage', populatedMessage);
+
+    for (const memberId of recipientIds) {
+      io.to(`user_${memberId}`).emit('push_notification', notificationPayload);
+    }
+  }
+
+  if (recipientIds.length > 0) {
+    void sendPushNotificationToUsers(recipientIds, notificationPayload);
   }
 
   return populatedMessage;
@@ -87,8 +129,19 @@ export const markMessagesAsReadService = async ({
     userId,
   });
 
-  if (io && groupId) {
-    io.to(toIdString(groupId)).emit('updateMessage', updatedMessages);
+  if (io && groupId && Array.isArray(updatedMessages) && updatedMessages.length > 0) {
+    const room = toIdString(groupId);
+    io.to(room).emit('updateMessage', updatedMessages);
+
+    // Also emit directly to each message sender's personal room to guarantee delivery
+    const senderIds = new Set(
+      updatedMessages
+        .map((m) => toIdString(m.sender?._id || m.sender))
+        .filter(Boolean)
+    );
+    for (const senderId of senderIds) {
+      io.to(`user_${senderId}`).emit('updateMessage', updatedMessages);
+    }
   }
 
   return updatedMessages;
@@ -98,10 +151,14 @@ export const syncUserGroupsOnConnectService = async ({ user, socket, io }) => {
   const userId = toIdString(user._id);
   const groups = await findGroupsByMember(userId);
 
+  // Join all group rooms first so no room broadcasts are missed
+  for (const group of groups) {
+    socket.join(toIdString(group._id));
+  }
+
   await Promise.all(
     groups.map(async (group) => {
       const room = toIdString(group._id);
-      socket.join(room);
 
       const onlineList = getOnlineMembersForGroup(group.members);
       const updatedMessages = await markGroupMessagesDeliveredRepo(
@@ -109,7 +166,9 @@ export const syncUserGroupsOnConnectService = async ({ user, socket, io }) => {
         userId
       );
 
-      io.to(room).emit('updateMessage', updatedMessages);
+      if (Array.isArray(updatedMessages) && updatedMessages.length > 0) {
+        io.to(room).emit('updateMessage', updatedMessages);
+      }
       socket.emit('initialonline', {
         groupId: room,
         users: onlineList,

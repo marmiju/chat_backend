@@ -132,7 +132,21 @@ const createSocketHandlers = (io, socket, user) => {
       return { status: 'ok', group };
     }),
 
-    onActiveGroup: ({ groupId } = {}) => setActiveGroup(socket.id, groupId),
+    onActiveGroup: async ({ groupId } = {}) => {
+      if (!groupId) return;
+      const room = toIdString(groupId);
+      setActiveGroup(socket.id, room);
+      socket.join(room);
+      try {
+        await markMessagesAsReadService({
+          groupId: room,
+          userId,
+          io,
+        });
+      } catch (err) {
+        console.error('Error marking messages read on active_group:', err.message);
+      }
+    },
 
     onInactiveGroup: () => clearActiveGroup(socket.id),
 
@@ -167,12 +181,8 @@ export const SocketIO = (io) => {
     registerSocket(socket.id, userId);
     socket.join(`user_${userId}`);
 
-    try {
-      await syncUserGroupsOnConnectService({ user, socket, io });
-    } catch (err) {
-      console.error('Failed to sync user groups on connect:', err.message);
-    }
-
+    // Register event handlers immediately before awaiting async DB operations
+    // so initial client emissions (active_group, mark_as_read, etc.) are never dropped.
     const handlers = createSocketHandlers(io, socket, user);
 
     socket.on('join_group_room', handlers.onJoinGroupRoom);
@@ -187,5 +197,11 @@ export const SocketIO = (io) => {
     socket.on('active_group', handlers.onActiveGroup);
     socket.on('inactive_group', handlers.onInactiveGroup);
     socket.on('disconnect', handlers.onDisconnect);
+
+    try {
+      await syncUserGroupsOnConnectService({ user, socket, io });
+    } catch (err) {
+      console.error('Failed to sync user groups on connect:', err.message);
+    }
   });
 };

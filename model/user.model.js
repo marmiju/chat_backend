@@ -19,9 +19,51 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  displayName: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  avatar: {
+    type: String,
+    default: '',
+  },
+  bio: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  title: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  statusText: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  phone: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   isAdmin: {
     type: Boolean,
     default: false
+  },
+  pushSubscriptions: {
+    type: [
+      {
+        endpoint: { type: String, required: true },
+        keys: {
+          p256dh: { type: String, required: true },
+          auth: { type: String, required: true },
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
   }
 }, {
   timestamps: true

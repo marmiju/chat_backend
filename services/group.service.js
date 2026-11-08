@@ -16,6 +16,7 @@ import {
   deleteMessagesByGroupRepo,
 } from '../repositories/chat.repository.js';
 import { getUserSockets } from './presence.service.js';
+import { sendPushNotificationToUsers } from './push.service.js';
 import {
   badRequest,
   conflict,
@@ -128,11 +129,17 @@ export const addMemberToGroupService = async ({
   }
 
   const group = await assertGroupExists(groupId);
+  if (group.isDirect) {
+    throw badRequest('Cannot add members to a direct message conversation');
+  }
   if (isMemberOfGroup(group, targetUserId)) {
     throw conflict('User already a member of this group');
   }
 
   const updatedGroup = await addMemberToGroupRepo(groupId, targetUserId);
+  if (updatedGroup?.$alreadyMember) {
+    throw conflict('User already a member of this group');
+  }
   const addedMember = updatedGroup.members.find(
     (m) => toIdString(m) === toIdString(targetUserId)
   );
@@ -157,7 +164,29 @@ export const addMemberToGroupService = async ({
     });
     io.to(room).emit('new_message', notification);
     io.to(targetRoom).emit('added_to_group', updatedGroup);
+    io.to(targetRoom).emit('push_notification', {
+      type: 'added_to_group',
+      title: `Added to #${updatedGroup.name}`,
+      body: `${actor.displayName || actor.username} added you to #${updatedGroup.name}`,
+      groupId: room,
+      groupName: updatedGroup.name,
+      isDirect: false,
+      senderId: toIdString(actor._id),
+      senderName: actor.displayName || actor.username,
+      url: `/channels/${room}`,
+      createdAt: new Date().toISOString(),
+    });
   }
+
+  void sendPushNotificationToUsers([toIdString(targetUserId)], {
+    type: 'added_to_group',
+    title: `Added to #${updatedGroup.name}`,
+    body: `${actor.displayName || actor.username} added you to #${updatedGroup.name}`,
+    groupId: toIdString(groupId),
+    groupName: updatedGroup.name,
+    isDirect: false,
+    url: `/channels/${toIdString(groupId)}`,
+  });
 
   return { group: updatedGroup, member: addedMember, notification };
 };

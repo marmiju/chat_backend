@@ -16,6 +16,7 @@ configDotenv();
 const PORT = process.env.PORT || 5000;
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
+  'https://nexus-blond-phi.vercel.app/',
   'https://chat-backend-0o2r.onrender.com',
 ];
 
@@ -36,8 +37,8 @@ const io = new Server(server, {
   cors: createCorsConfig(['GET', 'POST']),
 });
 
-app.use(express.json());
-app.use(cors(createCorsConfig(['GET', 'POST', 'PUT', 'DELETE'])));
+app.use(express.json({ limit: '5mb' }));
+app.use(cors(createCorsConfig(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])));
 
 // Initialize database and real-time socket server
 connectDb();
@@ -46,7 +47,7 @@ SocketIO(io);
 // Routes
 const attachIO = withSocketIO(io);
 app.use('/health', healthroute);
-app.use('/api/user', userRouter);
+app.use('/api/user', attachIO, userRouter);
 app.use('/api/groups', attachIO, GroupRouter);
 app.use('/api/chats', attachIO, ChatRouter);
 
