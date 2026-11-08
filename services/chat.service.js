@@ -14,6 +14,7 @@ import {
 import {
   buildInitialDeliveries,
   getOnlineMembersForGroup,
+  getUserSockets,
 } from './presence.service.js';
 import { sendPushNotificationToUsers } from './push.service.js';
 import { badRequest, forbidden } from '../utils/error.util.js';
@@ -100,8 +101,14 @@ export const sendMessageService = async ({
     }
   }
 
-  if (recipientIds.length > 0) {
-    void sendPushNotificationToUsers(recipientIds, notificationPayload);
+  // Only send Web Push to recipients who do not have an active Socket.IO connection
+  // so online users don't receive both a Socket notification and a Service Worker Web Push.
+  const offlineRecipientIds = io
+    ? recipientIds.filter((memberId) => getUserSockets(memberId).size === 0)
+    : recipientIds;
+
+  if (offlineRecipientIds.length > 0) {
+    void sendPushNotificationToUsers(offlineRecipientIds, notificationPayload);
   }
 
   return populatedMessage;

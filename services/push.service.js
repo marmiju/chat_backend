@@ -187,10 +187,14 @@ export const sendPushNotificationToUsers = async (userIds, payload) => {
 
     const vapidKeys = getVapidKeys();
     const payloadString = JSON.stringify(payload);
+    const seenEndpoints = new Set();
 
     await Promise.allSettled(
       users.flatMap((u) =>
         (u.pushSubscriptions || []).map(async (sub) => {
+          if (!sub?.endpoint || seenEndpoints.has(sub.endpoint)) return;
+          seenEndpoints.add(sub.endpoint);
+
           try {
             const body = encryptWebPushPayload(payloadString, sub.keys);
             const jwt = createVapidJwt(sub.endpoint, vapidKeys);

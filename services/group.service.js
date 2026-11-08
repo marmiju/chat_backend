@@ -178,15 +178,18 @@ export const addMemberToGroupService = async ({
     });
   }
 
-  void sendPushNotificationToUsers([toIdString(targetUserId)], {
-    type: 'added_to_group',
-    title: `Added to #${updatedGroup.name}`,
-    body: `${actor.displayName || actor.username} added you to #${updatedGroup.name}`,
-    groupId: toIdString(groupId),
-    groupName: updatedGroup.name,
-    isDirect: false,
-    url: `/channels/${toIdString(groupId)}`,
-  });
+  const targetIdStr = toIdString(targetUserId);
+  if (!io || getUserSockets(targetIdStr).size === 0) {
+    void sendPushNotificationToUsers([targetIdStr], {
+      type: 'added_to_group',
+      title: `Added to #${updatedGroup.name}`,
+      body: `${actor.displayName || actor.username} added you to #${updatedGroup.name}`,
+      groupId: toIdString(groupId),
+      groupName: updatedGroup.name,
+      isDirect: false,
+      url: `/channels/${toIdString(groupId)}`,
+    });
+  }
 
   return { group: updatedGroup, member: addedMember, notification };
 };

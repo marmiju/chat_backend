@@ -16,7 +16,7 @@ configDotenv();
 const PORT = process.env.PORT || 5000;
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
-  'https://nexus-blond-phi.vercel.app/',
+  'https://nexus-blond-phi.vercel.app',
   'https://chat-backend-0o2r.onrender.com',
 ];
 
